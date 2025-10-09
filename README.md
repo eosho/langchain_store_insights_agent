@@ -1,9 +1,5 @@
 # 🏪 Store Insights AI
 
-A production-ready RAG (Retrieval-Augmented Generation) system that provides intelligent, natural language access to store performance data using LangGraph, LangChain, and Azure OpenAI.
-
-## 🎯 Overview
-
 Store Insights AI is an intelligent chatbot that answers questions about store performance, inventory, and operations using natural language. It automatically:
 
 - **Extracts entities** (store IDs, dates) from user questions
