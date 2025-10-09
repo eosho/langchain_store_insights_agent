@@ -121,7 +121,7 @@ def _retryable(name: str = "insights_api"):
     return decorator
 
 
-class ExternalInsightsClient:
+class FreshAPIClient:
     """Async HTTP wrapper for the external recommendations/insights service."""
 
     def __init__(

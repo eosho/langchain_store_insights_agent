@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Body, Request
 from langchain_core.runnables import RunnableConfig
 
 from schemas import ChatRequest, ChatResponse
-from ..insights_client import ExternalInsightsClient
+from ..insights_client import FreshAPIClient
 from graph import create_graph, GraphState
 
 
@@ -18,15 +18,15 @@ logging.getLogger("azure").setLevel(logging.WARNING)
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-def get_insights_client(request: Request) -> ExternalInsightsClient:
-    """Retrieve the shared ExternalInsightsClient from app state."""
+def get_insights_client(request: Request) -> FreshAPIClient:
+    """Retrieve the shared FreshAPIClient from app state."""
     return request.app.state.insights_client
 
 
 @router.post("/ask", response_model=ChatResponse)
 async def ask(
     request: ChatRequest = Body(...),
-    client: ExternalInsightsClient = Depends(get_insights_client),
+    client: FreshAPIClient = Depends(get_insights_client),
 ):
     """Non-streaming chat endpoint that answers questions based on store insights.
 

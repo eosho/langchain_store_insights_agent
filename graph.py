@@ -14,6 +14,7 @@ from models import Router, Generator, ConversationalGenerator, IntentAnalyzer
 from app.llm.base import get_llm, PROVIDER_TYPE
 from app.config.app_config import settings
 from app.api.routes.insights import get_insights
+from app.api.insights_client import FreshAPIClient
 
 
 logger = logging.getLogger(__name__)
@@ -69,13 +70,17 @@ class GraphNodes:
         """
         logger.debug("---ANALYZE INTENT---")
 
-        question = state["question"]
+        question = state.get("question")
         # Get insights_client from config instead of state (not serializable)
         insights_client = config.get("configurable", {}).get("insights_client")
         
         if not insights_client:
-            logger.error("insights_client not found in config!")
-            raise ValueError("insights_client must be passed via config")
+            logger.warning("insights_client not found in config! Initializing a new instance.")
+
+            insights_client = FreshAPIClient(
+                base_url=settings.FRESH_AGENT_API_BASE_URL,
+                api_key=settings.FRESH_AGENT_API_KEY,
+            )
 
         # Use LLM to extract intent (store_id, date, needs_insights)
         intent_result = await self.intent_analyzer.ainvoke({"question": question})
@@ -137,7 +142,7 @@ class GraphNodes:
         """
         logger.debug("---GENERATE ANSWER---")
 
-        question = state["question"]
+        question = state.get("question")
         insights = state.get("insights", [])
 
         # Generate answer using the RAG chain
@@ -173,7 +178,7 @@ class GraphNodes:
         """
         logger.debug("---GENERATE CONVERSATIONAL---")
 
-        question = state["question"]
+        question = state.get("question")
 
         # Generate conversational response
         generation = await self.conversation_chain.ainvoke({"question": question})
@@ -207,7 +212,7 @@ class GraphNodes:
         """
         logger.debug("---ROUTE QUESTION---")
 
-        question = state["question"]
+        question = state.get("question")
 
         # Use router model to classify
         source_result = self.question_router.invoke({"question": question})
