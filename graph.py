@@ -290,26 +290,6 @@ def create_graph():
 
     Returns:
         Compiled LangGraph workflow ready to execute
-
-    Example:
-        ```python
-        from graph import create_graph
-
-        # In your endpoint
-        workflow = create_graph()
-        result = await workflow.ainvoke({
-            "question": "What are sales for store 100 yesterday?",
-            "insights": [],  # No longer need to pre-fetch
-            "store_id": None,  # Will be extracted by intent analyzer
-            "date": None,  # Will be extracted by intent analyzer
-            "generation": "",
-            "route": "",
-            "iteration_count": 0,
-            "insights_client": client,  # Pass the client
-            "insights_retrieved": False,
-        })
-        answer = result["generation"]
-        ```
     """
     nodes = GraphNodes()
     return StoreInsightsGraph.create(nodes)
