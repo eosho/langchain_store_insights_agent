@@ -11,9 +11,8 @@ from typing_extensions import TypedDict
 
 from schemas import Insight
 from models import Router, Generator, ConversationalGenerator, IntentAnalyzer
-from app.api.insights_client import ExternalInsightsClient
-from app.llm.base import get_llm
-from config import settings
+from app.llm.base import get_llm, PROVIDER_TYPE
+from app.config.app_config import settings
 from app.api.routes.insights import get_insights
 
 
@@ -27,11 +26,7 @@ logging.getLogger("azure").setLevel(logging.WARNING)
 
 
 class GraphState(TypedDict):
-    """Represents the state of our store insights RAG graph.
-    
-    Note: insights_client is NOT in state (not serializable).
-    It must be passed via config: {"configurable": {"insights_client": client}}
-    """
+    """Represents the state of our store insights RAG graph."""
 
     question: str
     generation: str
@@ -53,7 +48,7 @@ class GraphNodes:
         """Initialize nodes with models from models.py."""
 
         # Create shared LLM instances
-        llm = get_llm(settings.llm_provider.value, temperature=0)
+        llm = get_llm(cast(PROVIDER_TYPE, settings.LLM_PROVIDER), temperature=0)
 
         # Initialize all model chains with shared LLM instances
         self.intent_analyzer = IntentAnalyzer.get_model(llm)

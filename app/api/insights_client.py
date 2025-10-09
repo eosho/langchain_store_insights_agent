@@ -14,7 +14,7 @@ from tenacity import (
     before_sleep_log,
 )
 
-from config import settings
+from app.config.app_config import settings
 
 
 logger = logging.getLogger("insights.client")
@@ -143,16 +143,16 @@ class ExternalInsightsClient:
         Raises:
             ValueError: If no base URL is configured.
         """
-        self.base_url = base_url or settings.fresh_agent_api_base_url
-        self.api_key = api_key or settings.fresh_agent_api_key
-        self.timeout = timeout or settings.fresh_agent_api_timeout_seconds
+        self.base_url = base_url or settings.FRESH_AGENT_API_BASE_URL
+        self.api_key = api_key or settings.FRESH_AGENT_API_KEY
+        self.timeout = timeout or settings.FRESH_AGENT_API_TIMEOUT_SECONDS
 
         if not self.base_url:
             raise ValueError("FRESH_AGENT_API_BASE_URL must be configured")
 
         self._client = httpx.AsyncClient(
             base_url=self.base_url,
-            timeout=self.timeout,
+            timeout=int(self.timeout),
             headers=self._headers(),
         )
 

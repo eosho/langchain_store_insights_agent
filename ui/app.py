@@ -1,15 +1,16 @@
 """Simple Streamlit UI for Store Insights AI Chat."""
 
+import os
 import sys
-from pathlib import Path
-
-# Add parent directory to path to import config
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import httpx
 import streamlit as st
+
 from typing import Dict, Any, Optional
-from config import settings
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from app.config.app_config import settings
 
 # Page configuration
 st.set_page_config(page_title="Store Insights AI", page_icon="🏪", layout="centered")
@@ -20,35 +21,20 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "Hello! Ask me about store insights."}
     ]
 
-if "thread_id" not in st.session_state:
-    st.session_state.thread_id = None
-
-if "waiting_for_clarification" not in st.session_state:
-    st.session_state.waiting_for_clarification = False
-
-if "clarification_request" not in st.session_state:
-    st.session_state.clarification_request = None
-
 # Get API URL from settings or environment
 if "api_url" not in st.session_state:
     st.session_state.api_url = (
-        settings.store_insights_api_url or "http://localhost:8000/v1/api"
+        settings.STORE_INSIGHTS_API_URL or "http://localhost:8000/v1/api"
     )
 
 
 def call_ask_endpoint(
     question: str,
     api_url: str,
-    session_id: Optional[str] = None,
-    resume_value: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Call the /chat/ask endpoint with a question or resume value."""
+    """Call the /chat/ask endpoint with a question."""
     try:
         payload: Dict[str, Any] = {"question": question}
-        if session_id:
-            payload["session_id"] = session_id
-        if resume_value:
-            payload["resume_value"] = resume_value
 
         with httpx.Client(timeout=60.0) as client:
             response = client.post(f"{api_url}/chat/ask", json=payload)
@@ -109,9 +95,6 @@ with st.sidebar:
         st.session_state.messages = [
             {"role": "assistant", "content": "Hello! Ask me about store insights."}
         ]
-        st.session_state.thread_id = None
-        st.session_state.waiting_for_clarification = False
-        st.session_state.clarification_request = None
         st.rerun()
 
 # Display chat messages
@@ -134,80 +117,9 @@ else:
     prompt = st.chat_input("Ask about store insights...")
 
 
-# Handle clarification input
-if (
-    st.session_state.waiting_for_clarification
-    and st.session_state.clarification_request
-):
-    clarification = st.session_state.clarification_request
-
-    with st.chat_message("assistant"):
-        st.info(
-            f"🤔 **Clarification needed:** {clarification.get('message', 'Please provide more information')}"
-        )
-
-        # Show current extracted values
-        if "current_values" in clarification:
-            with st.expander("Current extracted values"):
-                st.json(clarification["current_values"])
-
-    # Use form for clarification input
-    with st.form("clarification_form", clear_on_submit=True):
-        st.write("Please provide the correct information:")
-
-        current_vals = clarification.get("current_values", {})
-        store_id_input = st.text_input(
-            "Store ID", value=current_vals.get("store_id", "")
-        )
-        date_input = st.text_input(
-            "Date (YYYY-MM-DD)", value=current_vals.get("date", "")
-        )
-
-        submitted = st.form_submit_button("Submit Clarification")
-
-        if submitted:
-            # Prepare resume value
-            resume_value = {
-                "store_id": store_id_input if store_id_input else None,
-                "date": date_input if date_input else None,
-            }
-
-            with st.spinner("Processing your clarification..."):
-                response = call_ask_endpoint(
-                    question="",  # Not used for resume
-                    api_url=st.session_state.api_url,
-                    session_id=st.session_state.thread_id,
-                    resume_value=resume_value,
-                )
-
-                if response:
-                    # Clear clarification state
-                    st.session_state.waiting_for_clarification = False
-                    st.session_state.clarification_request = None
-
-                    # Check if another clarification is needed
-                    if response.get("needs_clarification"):
-                        st.session_state.waiting_for_clarification = True
-                        st.session_state.clarification_request = response.get(
-                            "clarification_request"
-                        )
-                        st.session_state.thread_id = response.get("session_id")
-                    else:
-                        # Got final answer
-                        answer = response.get("answer", "No answer received")
-                        st.session_state.messages.append(
-                            {
-                                "role": "assistant",
-                                "content": answer,
-                                "metadata": response.get("metadata", {}),
-                                "sources": response.get("sources", []),
-                            }
-                        )
-
-                st.rerun()
 
 # Process user input
-elif prompt:
+if prompt:
     # Add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
@@ -215,46 +127,30 @@ elif prompt:
     # Get AI response
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            response = call_ask_endpoint(
-                prompt, st.session_state.api_url, session_id=st.session_state.thread_id
-            )
+            response = call_ask_endpoint(prompt, st.session_state.api_url)
 
             if response:
-                # Save session ID for continuity
-                if response.get("session_id"):
-                    st.session_state.thread_id = response["session_id"]
+                # Normal response
+                answer = response.get("answer", "No answer received")
+                st.markdown(answer)
 
-                # Check if clarification is needed
-                if response.get("needs_clarification"):
-                    st.session_state.waiting_for_clarification = True
-                    st.session_state.clarification_request = response.get(
-                        "clarification_request"
-                    )
-                    st.info(
-                        f"🤔 {response['clarification_request'].get('message', 'Need more information')}"
-                    )
-                else:
-                    # Normal response
-                    answer = response.get("answer", "No answer received")
-                    st.markdown(answer)
+                # Add to session state with full response
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": answer,
+                        "metadata": response.get("metadata", {}),
+                        "sources": response.get("sources", []),
+                    }
+                )
 
-                    # Add to session state with full response
-                    st.session_state.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": answer,
-                            "metadata": response.get("metadata", {}),
-                            "sources": response.get("sources", []),
-                        }
-                    )
-
-                    # Show details
-                    with st.expander("View Details"):
-                        st.json(response.get("metadata", {}))
-                        if response.get("sources"):
-                            st.write(
-                                f"**Sources:** {len(response['sources'])} insights"
-                            )
+                # Show details
+                with st.expander("View Details"):
+                    st.json(response.get("metadata", {}))
+                    if response.get("sources"):
+                        st.write(
+                            f"**Sources:** {len(response['sources'])} insights"
+                        )
             else:
                 error_msg = "Sorry, I encountered an error processing your request."
                 st.write(error_msg)

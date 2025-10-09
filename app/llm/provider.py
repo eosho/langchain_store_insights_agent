@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Set
+from typing import Any
 from langchain_openai import ChatOpenAI, AzureChatOpenAI
 
 from .base import BaseProvider, LLMFactory
-from config import settings
+from app.config.app_config import settings
 
 
 class OpenAIProvider(BaseProvider):
@@ -35,8 +35,8 @@ class OpenAIProvider(BaseProvider):
         Raises:
             ValueError: If required parameters (`api_key` or `model`) are missing.
         """
-        api_key = settings.openai_api_key
-        model = settings.openai_model
+        api_key = settings.OPENAI_API_KEY
+        model = settings.OPENAI_MODEL_NAME
 
         if not api_key or not model:
             raise ValueError(
@@ -47,7 +47,7 @@ class OpenAIProvider(BaseProvider):
         logging.debug(f"Initializing OpenAI Chat model: {model}")
 
         return ChatOpenAI(
-            api_key=api_key,
+            api_key=api_key,    # type: ignore
             model=model,
             **kwargs,
         )
@@ -80,10 +80,10 @@ class AzureOpenAIProvider(BaseProvider):
         Raises:
             ValueError: If any required Azure configuration parameters are missing.
         """
-        api_key = settings.azure_openai_api_key
-        endpoint = settings.azure_openai_endpoint
-        deployment = settings.azure_openai_deployment
-        api_version = settings.azure_openai_api_version
+        api_key = settings.AZURE_OPENAI_API_KEY
+        endpoint = settings.AZURE_OPENAI_ENDPOINT
+        deployment = settings.AZURE_OPENAI_DEPLOYMENT
+        api_version = settings.AZURE_OPENAI_API_VERSION
 
         if not all([api_key, endpoint, deployment, api_version]):
             raise ValueError(
@@ -96,7 +96,7 @@ class AzureOpenAIProvider(BaseProvider):
         logging.debug(f"Initializing Azure OpenAI deployment: {deployment}")
 
         return AzureChatOpenAI(
-            api_key=api_key,
+            api_key=api_key,    # type: ignore
             azure_endpoint=endpoint,
             azure_deployment=deployment,
             api_version=api_version,
@@ -107,7 +107,7 @@ class AzureOpenAIProvider(BaseProvider):
 # Register only the provider specified in settings
 def _register_configured_provider():
     """Register only the LLM provider that's configured in settings."""
-    provider_name = settings.llm_provider.value.lower()
+    provider_name = settings.LLM_PROVIDER.lower()
     
     if provider_name == "openai":
         LLMFactory.register_provider("openai", OpenAIProvider)
