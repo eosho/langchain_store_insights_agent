@@ -14,7 +14,7 @@ from models import Router, Generator, ConversationalGenerator, IntentAnalyzer
 from app.llm.base import get_llm, PROVIDER_TYPE
 from app.config.app_config import settings
 from app.api.routes.insights import get_insights
-from app.api.insights_client import FreshAPIClient
+from app.api.insights_client import FreshAgentAPIClient
 
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ class GraphNodes:
         if not insights_client:
             logger.warning("insights_client not found in config! Initializing a new instance.")
 
-            insights_client = FreshAPIClient(
+            insights_client = FreshAgentAPIClient(
                 base_url=settings.FRESH_AGENT_API_BASE_URL,
                 api_key=settings.FRESH_AGENT_API_KEY,
             )

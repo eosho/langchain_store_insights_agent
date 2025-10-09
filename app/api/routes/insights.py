@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from datetime import date as Date
 
-from app.api.insights_client import FreshAPIClient, InsightsAPIError
+from app.api.insights_client import FreshAgentAPIClient, InsightsAPIError
 from app.utils.cache import (
     get_cached_insights,
     set_cached_insights,
@@ -22,8 +22,8 @@ router = APIRouter(prefix="/insights", tags=["insights"])
 _STAGE_FILE = Path("data/stage.json")
 
 
-def get_insights_client(request: Request) -> FreshAPIClient:
-    """Retrieve the shared FreshAPIClient from app state (set in lifespan)."""
+def get_insights_client(request: Request) -> FreshAgentAPIClient:
+    """Retrieve the shared FreshAgentAPIClient from app state (set in lifespan)."""
     return request.app.state.insights_client
 
 
@@ -91,14 +91,14 @@ async def get_insights(
         default=True,
         description="Use cached data if available (24-hour TTL).",
     ),
-    client: FreshAPIClient = Depends(get_insights_client),
+    client: FreshAgentAPIClient = Depends(get_insights_client),
 ):
     """Return a flat, LLM-friendly list of insights and recommendations.
 
     Behavior:
       • Checks cache first (24-hour TTL) unless use_cache=False
       • If `data/stage.json` exists, load and filter it locally (dev/staging mode).
-      • Otherwise, call the external insights API via `FreshAPIClient`.
+      • Otherwise, call the external insights API via `FreshAgentAPIClient`.
 
     The external/staged payload is a list of *summaries*. Each summary may contain
     `insights[]` and `recommendations[]`. This route flattens both into `Insight`

@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from .insights_client import FreshAPIClient
+from .insights_client import FreshAgentAPIClient
 from .routes import health, insights, chat
 from .middleware import LoggingMiddleware, RequestIDMiddleware
 from graph import StoreInsightsGraph
@@ -12,7 +12,7 @@ from graph import StoreInsightsGraph
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Shared clients/resources
-    app.state.insights_client = FreshAPIClient()
+    app.state.insights_client = FreshAgentAPIClient()
     app.state.chat_graph = StoreInsightsGraph()
 
     # Simple in-memory chat session store
