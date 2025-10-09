@@ -52,12 +52,12 @@ class Settings(BaseSettings):
     )
 
     # External fresh API
-    insights_api_base_url: Optional[str] = Field(
-        default=None, alias="INSIGHTS_API_BASE_URL"
+    fresh_agent_api_base_url: Optional[str] = Field(
+        default=None, alias="FRESH_AGENT_API_BASE_URL"
     )
-    insights_api_key: Optional[str] = Field(default=None, alias="INSIGHTS_API_KEY")
-    insights_api_timeout_seconds: int = Field(
-        default=30, alias="INSIGHTS_API_TIMEOUT_SECONDS"
+    fresh_agent_api_key: Optional[str] = Field(default=None, alias="FRESH_AGENT_API_KEY")
+    fresh_agent_api_timeout_seconds: int = Field(
+        default=30, alias="FRESH_AGENT_API_TIMEOUT_SECONDS"
     )
 
     store_insights_api_url: Optional[str] = Field(

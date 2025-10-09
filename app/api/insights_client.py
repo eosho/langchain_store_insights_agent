@@ -133,22 +133,22 @@ class ExternalInsightsClient:
         """Initialize the client.
 
         Args:
-            base_url: Optional override for the Insights API base URL. Defaults to
-                `settings.insights_api_base_url`.
+            base_url: Optional override for the Fresh Agent API base URL. Defaults to
+                `settings.fresh_agent_api_base_url`.
             api_key: Optional override for the API key. Defaults to
-                `settings.insights_api_key`.
+                `settings.fresh_agent_api_key`.
             timeout: Optional per-request timeout (seconds). Defaults to
-                `settings.insights_api_timeout_seconds`.
+                `settings.fresh_agent_api_timeout_seconds`.
 
         Raises:
             ValueError: If no base URL is configured.
         """
-        self.base_url = base_url or settings.insights_api_base_url
-        self.api_key = api_key or settings.insights_api_key
-        self.timeout = timeout or settings.insights_api_timeout_seconds
+        self.base_url = base_url or settings.fresh_agent_api_base_url
+        self.api_key = api_key or settings.fresh_agent_api_key
+        self.timeout = timeout or settings.fresh_agent_api_timeout_seconds
 
         if not self.base_url:
-            raise ValueError("INSIGHTS_API_BASE_URL must be configured")
+            raise ValueError("FRESH_AGENT_API_BASE_URL must be configured")
 
         self._client = httpx.AsyncClient(
             base_url=self.base_url,

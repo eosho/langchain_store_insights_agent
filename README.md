@@ -95,51 +95,8 @@ Store Insights AI is an intelligent chatbot that answers questions about store p
 4. **Configure environment variables**
    ```bash
    cp .env.example .env
-   # Edit .env with your credentials
+   # Edit .env with your credentials and values
    ```
-
-## ⚙️ Configuration
-
-Create a `.env` file in the root directory:
-
-```env
-# Application Settings
-APP_NAME=store-insights
-APP_ENV=local
-APP_DEBUG=false
-HOST=0.0.0.0
-PORT=8000
-
-# LLM Provider (openai or azure)
-LLM_PROVIDER=azure
-
-# OpenAI Configuration (if using OpenAI)
-OPENAI_API_KEY=sk-your-key-here
-OPENAI_MODEL=gpt-4
-
-# Azure OpenAI Configuration (if using Azure)
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_API_KEY=your-azure-key
-AZURE_OPENAI_API_VERSION=2024-08-01-preview
-AZURE_OPENAI_DEPLOYMENT=gpt-4
-
-# External Store Insights API
-INSIGHTS_API_BASE_URL=https://api.example.com/v1
-INSIGHTS_API_KEY=your-api-key
-INSIGHTS_API_TIMEOUT_SECONDS=30
-
-# Observability (Optional)
-APPLICATION_INSIGHTS_CONNECTION_STRING=your-app-insights-connection
-```
-
-### Configuration Options
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `LLM_PROVIDER` | LLM provider to use (`openai` or `azure`) | `azure` |
-| `INSIGHTS_API_BASE_URL` | Base URL for Store Insights API | Required |
-| `INSIGHTS_API_KEY` | API key for authentication | Required |
-| `INSIGHTS_API_TIMEOUT_SECONDS` | API request timeout | `30` |
 
 ## 🚀 Usage
 
