@@ -1,0 +1,14 @@
+fastapi==0.114.2
+uvicorn[standard]==0.37.0
+pydantic==2.9.2
+pydantic-settings==2.5.2
+httpx==0.27.2
+langchain==1.0.0a4
+langchain-openai==1.0.0a4
+langgraph==1.0.0a4
+SQLAlchemy==2.0.35
+psycopg[binary]==3.2.1
+cryptography==43.0.1
+python-dotenv==1.0.1
+tenacity==9.0.0
+cachetools==6.2.0

@@ -1,0 +1,171 @@
+[
+  {
+    "id": "3154b4cd-9d01-4c7e-960e-f83507b3cb61",
+    "summary_id": "3154b4cd-9d01-4c7e-960e-f83507b3cb61",
+    "country_code": "us",
+    "site_id": "100",
+    "applicable_date": "2025-10-01",
+    "applicable_department": "93",
+    "generated_date_time": "2025-10-01T01:46:07.019772+00:00",
+    "metadata": {
+      "agent_name": "google fresh",
+      "agent_version": "0.1.0",
+      "model": "gemini-2.5-flash",
+      "usecase": "fresh",
+      "run_id": "CHICAGO_20250930204402068172"
+    },
+    "insights": [
+      {
+        "insight_id": "812f9aed-d34a-40ca-819f-0b863a98bc45",
+        "rank": 1,
+        "title": "Process Issues: Improper Donation for Meat Items",
+        "content": "The following meat items had donation issues yesterday, indicating they were not properly donated despite eligibility:\n\n| Item Description      | Item Number |\n| :-------------------- | :---------- |\n| 12/1# GROUND TURKEY   | 550388636   |\n| HL ORGANIC B/S THIGH  | 550804391   |\n| 865 B/S THIGHS HL RW  | 565163491   |\n| JNSVL ORIGINAL BRAT   | 9375959     |\n| HNY SMKED FISH ORIG   | 667612897   |\n| PR TY CHKN LEG QTRS   | 672879054   |\n| 664/936 TENDRS HL RW  | 565163488   |\n| FZ 26/30 RAW SHRIMP   | 555829915   |\n| PORK CHOPS SMKD BNLS  | 9351529     |",
+        "applicable_roles": [
+          "team_lead"
+        ],
+        "time_period": "Today",
+        "shift": "First Shift"
+      },
+      {
+        "insight_id": "240c44fc-7507-426d-a334-13e9288b7f0c",
+        "rank": 2,
+        "title": "Recurring Waste for Meat Department",
+        "content": "The following items were yesterday's top waste contributors in Department 93:\n\n| Item Description      | Item Number |\n| :-------------------- | :---------- |\n| 12/1# GROUND TURKEY   | 550388636   |\n| HL ORGANIC B/S THIGH  | 550804391   |\n| 865 B/S THIGHS HL RW  | 565163491   |\n| JNSVL ORIGINAL BRAT   | 9375959     |\n| HNY SMKED FISH ORIG   | 667612897   |\n| ORG B/S BREAST - RW   | 550046184   |\n| PORK CHOPS SMKD BNLS  | 9351529     |\n| PR TY CHKN LEG QTRS   | 672879054   |\n| 664/936 TENDRS HL RW  | 565163488   |\n| FZ 26/30 RAW SHRIMP   | 555829915   |\n\n**JNSVL ORIGINAL BRAT (Item number: 9375959)** is a consistent top waste item. Additionally, **ORG B/S BREAST - RW (Item number: 550046184)** was a top waste contributor without reported donation issues.",
+        "applicable_roles": [
+          "team_lead"
+        ],
+        "time_period": "Today",
+        "shift": "First Shift"
+      }
+    ],
+    "recommendations": [
+      {
+        "recommendation_id": "41e81896-711e-443d-b935-b27e5cdae76d",
+        "rank": 1,
+        "title": "Ensure Timely CVP for Meat Items",
+        "content": "CVP any of the following items with a use-by date of today by 9:00 AM:\n\n| Item Description      | Item Number |\n| :-------------------- | :---------- |\n| 12/1# GROUND TURKEY   | 550388636   |\n| HL ORGANIC B/S THIGH  | 550804391   |\n| 865 B/S THIGHS HL RW  | 565163491   |\n| PR TY CHKN LEG QTRS   | 672879054   |\n| 664/936 TENDRS HL RW  | 565163488   |\n| FZ 26/30 RAW SHRIMP   | 555829915   |\n| ORG B/S BREAST - RW   | 550046184   |\n\nProactively CVP the following items expiring in the next three days:\n\n| Item Description      | Item Number |\n| :-------------------- | :---------- |\n| JNSVL ORIGINAL BRAT   | 9375959     |\n| HNY SMKED FISH ORIG   | 667612897   |\n| PORK CHOPS SMKD BNLS  | 9351529     |",
+        "applicable_roles": [
+          "team_lead"
+        ],
+        "outcome": "Reduced waste for expiring meat and deli items through timely markdown, improving sales and reducing financial loss.",
+        "related_insights": [
+          "812f9aed-d34a-40ca-819f-0b863a98bc45",
+          "240c44fc-7507-426d-a334-13e9288b7f0c"
+        ],
+        "insight_summary": null
+      },
+      {
+        "recommendation_id": "e7fd41ec-928c-4dba-b7dc-85f057b03e35",
+        "rank": 2,
+        "title": "Verify Meat Donation Freezing Protocol",
+        "content": "Verify that the following items, if past sell-by, were frozen on or before their sell-by date for donation eligibility:\n\n| Item Description      | Item Number |\n| :-------------------- | :---------- |\n| 12/1# GROUND TURKEY   | 550388636   |\n| HL ORGANIC B/S THIGH  | 550804391   |\n| 865 B/S THIGHS HL RW  | 565163491   |\n| JNSVL ORIGINAL BRAT   | 9375959     |\n| HNY SMKED FISH ORIG   | 667612897   |\n| PR TY CHKN LEG QTRS   | 672879054   |\n| 664/936 TENDRS HL RW  | 565163488   |\n| FZ 26/30 RAW SHRIMP   | 555829915   |\n| PORK CHOPS SMKD BNLS  | 9351529     |",
+        "applicable_roles": [
+          "team_lead"
+        ],
+        "outcome": "Increased eligible donations and reduced waste by ensuring compliance with freezing protocols for donation-eligible meat products.",
+        "related_insights": [
+          "812f9aed-d34a-40ca-819f-0b863a98bc45"
+        ],
+        "insight_summary": null
+      }
+    ],
+    "_rid": "sb9DAM7Fm6ZGDQIAAAAAAA==",
+    "_self": "dbs/sb9DAA==/colls/sb9DAM7Fm6Y=/docs/sb9DAM7Fm6ZGDQIAAAAAAA==/",
+    "_etag": "\"ae016b97-0000-0200-0000-68dc87df0000\"",
+    "_attachments": "attachments/",
+    "_ts": 1759283167
+  },
+  {
+    "id": "69ab7eb2-b8df-428a-9d6b-dee6c6e24cd6",
+    "summary_id": "69ab7eb2-b8df-428a-9d6b-dee6c6e24cd6",
+    "country_code": "us",
+    "site_id": "100",
+    "applicable_date": "2025-10-01",
+    "applicable_department": "80",
+    "generated_date_time": "2025-10-01T17:58:55.532473",
+    "metadata": {
+      "usecase": "Rotisserie Chicken Waste Optimization",
+      "agent_name": "Agent-FreshAI",
+      "agent_version": "2.0",
+      "model": "gpt-4.1"
+    },
+    "recommendations": [
+      {
+        "recommendation_id": "d414cb35-8576-4c38-b788-547b09411b84",
+        "title": "Confirm lunch rush sell-through by 2:30PM; adjust 3rd batch by up to ±6 chickens based on sales pace",
+        "outcome": "Midday and afternoon production will better match actual demand, lowering waste and maintaining a full-feeling case.",
+        "rank": "1",
+        "content": "Check actual rotisserie sales from 12-2PM. If sales fall short of midday volume plan (90 units), reduce the 3PM batch by up to 6 chickens. If sales exceed plan, increase by up to 6 chickens. This ensures you react in real time to true customer demand, optimizing inventory and reducing food waste while still presenting a plentiful case to drive traffic.\n| Floor Time | Traditional | Lemon Pepper |\n|------------|-------------|--------------|\n|09:00 AM|18|7|\n|12:00 PM|27|15|\n|03:00 PM|31|17|\n|06:00 PM|14|7|\n|Total|90|46|",
+        "applicable_roles": [
+          "team_lead",
+          "coach",
+          "associate",
+          "store_manager"
+        ],
+        "related_insights": [
+          "f2c68de5-0a2c-4016-9f30-8e93a9627b88",
+          "57ecf928-ff63-4f9e-ade0-4d3fd7649611",
+          "be158eb0-bf04-4148-b9a0-60636f8d72a4"
+        ]
+      }
+    ],
+    "insights": [
+      {
+        "insight_id": "f2c68de5-0a2c-4016-9f30-8e93a9627b88",
+        "title": "Peak batch: 58% of today's rotisserie output falls into 2nd and 3rd shifts (lunch/afternoon rush)",
+        "time_period": "",
+        "shift": "",
+        "rank": "1",
+        "content": "Lunch and afternoon shifts (12PM & 3PM) together produce 90 chickens—58% of total daily volume. This matches sales concentration before 6PM. It supports the recommendation to closely monitor midday demand and adjust afternoon batch up or down, preventing overproduction and waste.",
+        "applicable_roles": [
+          "team_lead",
+          "coach",
+          "associate",
+          "store_manager"
+        ],
+        "related_recommendations": [
+          "d414cb35-8576-4c38-b788-547b09411b84"
+        ]
+      },
+      {
+        "insight_id": "57ecf928-ff63-4f9e-ade0-4d3fd7649611",
+        "title": "Morning batch is frontloaded, but evening production is cut by over 50% vs. midday high",
+        "time_period": "",
+        "shift": "",
+        "rank": "2",
+        "content": "First batch (9AM) is set to 25 chickens to ensure full shelves at open. Last batch (6PM) is just 21—a 54% drop from the peak. This keeps the case looking stocked but sharply limits evening waste, supporting the rationale for targeted reductions.",
+        "applicable_roles": [
+          "team_lead",
+          "coach",
+          "associate",
+          "store_manager"
+        ],
+        "related_recommendations": [
+          "d414cb35-8576-4c38-b788-547b09411b84"
+        ]
+      },
+      {
+        "insight_id": "be158eb0-bf04-4148-b9a0-60636f8d72a4",
+        "title": "Batch 2 volume exceeds batch 1 by 44%—focus operational checks at midday",
+        "time_period": "",
+        "shift": "",
+        "rank": "3",
+        "content": "Midday production ramps up to 42 chickens vs. 25 at open—a 44% increase. This highlights midday as the prime window for sales opportunity and risk of waste if demand misaligns, supporting the need to validate sell-through and possibly adjust next batch.",
+        "applicable_roles": [
+          "team_lead",
+          "coach",
+          "associate",
+          "store_manager"
+        ],
+        "related_recommendations": [
+          "d414cb35-8576-4c38-b788-547b09411b84"
+        ]
+      }
+    ],
+    "_rid": "sb9DAM7Fm6a1HQIAAAAAAA==",
+    "_self": "dbs/sb9DAA==/colls/sb9DAM7Fm6Y=/docs/sb9DAM7Fm6a1HQIAAAAAAA==/",
+    "_etag": "\"ce01e545-0000-0200-0000-68dd6bdf0000\"",
+    "_attachments": "attachments/",
+    "_ts": 1759341535
+  }
+]
