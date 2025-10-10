@@ -60,18 +60,6 @@ async def ask(
         logger.debug("----FINAL GRAPH STATE----")
         logger.debug(final_state)
 
-        # Format date for response
-        date_value = final_state.get("date")
-        if date_value:
-            # Convert date object to string if needed
-            date_str = (
-                date_value.isoformat()
-                if hasattr(date_value, "isoformat")
-                else str(date_value)
-            )
-        else:
-            date_str = None
-
         return ChatResponse(
             answer=answer,
             sources=[
@@ -80,7 +68,6 @@ async def ask(
             ],
             metadata={
                 "store_id": final_state.get("store_id"),
-                "date": date_str,
                 "route": final_state.get("route"),
             },
         )
