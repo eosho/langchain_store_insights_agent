@@ -94,21 +94,3 @@ class HallucinationGrader:
             HallucinationGrader.GradeHallucination
         )
         return HALLUCINATION_GRADER_PROMPT | structured_llm
-
-
-class HumanFeedbackRequest(BaseModel):
-    """Request for human clarification or confirmation."""
-
-    request_type: Literal["clarification", "confirmation", "selection"] = Field(
-        description="Type of human input needed"
-    )
-    message: str = Field(
-        description="Message to show the user explaining what input is needed"
-    )
-    options: Optional[list[str]] = Field(
-        default=None, description="Optional list of choices for the user to select from"
-    )
-    current_values: dict = Field(
-        default_factory=dict,
-        description="Current extracted values that may need confirmation",
-    )

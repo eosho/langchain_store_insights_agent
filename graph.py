@@ -16,7 +16,6 @@ from models import (
     ConversationalGenerator,
     IntentAnalyzer,
     HallucinationGrader,
-    HumanFeedbackRequest,
 )
 from app.llm.base import get_llm, PROVIDER_TYPE
 from app.config.app_config import settings
@@ -99,11 +98,11 @@ class GraphNodes:
             )
 
         # Use LLM to extract intent (store_id, date, needs_insights)
-        intent_result = await self.intent_analyzer.ainvoke({"question": question})
-        intent = cast(IntentAnalyzer.ExtractedIntent, intent_result)
+        result = await self.intent_analyzer.ainvoke({"question": question})
+        intent = cast(IntentAnalyzer.ExtractedIntent, result)
 
         logger.debug(
-            f"---EXTRACTED INTENT: store_id={intent.store_id}, date={intent.date}, needs_insights={intent.needs_insights}---"
+            f"---EXTRACTED INTENT: store_id={intent.store_id}, needs_insights={intent.needs_insights}---"
         )
 
         # Retrieve insights if needed
