@@ -7,7 +7,7 @@ from langchain_core.runnables import RunnableConfig
 
 from schemas import ChatRequest, ChatResponse
 from ..insights_client import FreshAgentAPIClient
-from graph import create_graph, GraphState
+from graph import create_graph, GraphState, initialize_graph_state
 
 
 logger = logging.getLogger(__name__)
@@ -50,20 +50,15 @@ async def ask(
         )
 
         graph = create_graph()
-        initial_state: GraphState = {
-            "question": request.question,
-            "generation": "",
-            "insights": [],
-            "store_id": None,
-            "date": None,
-            "route": "",
-            "iteration_count": 0,
-            "insights_retrieved": False,
-        }
+        initial_state = initialize_graph_state()
+        initial_state["question"] = request.question
 
         final_state = await graph.ainvoke(initial_state, config)
         answer = final_state.get("generation", "")
         insights_used = final_state.get("insights", [])
+
+        logger.debug("----FINAL GRAPH STATE----")
+        logger.debug(final_state)
 
         # Format date for response
         date_value = final_state.get("date")
