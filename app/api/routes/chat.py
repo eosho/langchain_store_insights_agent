@@ -7,7 +7,7 @@ from langchain_core.runnables import RunnableConfig
 
 from schemas import ChatRequest, ChatResponse
 from ..insights_client import FreshAgentAPIClient
-from graph import create_graph, GraphState, initialize_graph_state
+from graph import create_graph, initialize_graph_state
 
 
 logger = logging.getLogger(__name__)

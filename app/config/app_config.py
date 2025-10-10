@@ -11,7 +11,7 @@ import os
 import logging
 
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 from functools import lru_cache
 from dotenv import (
     find_dotenv,
@@ -70,6 +70,13 @@ class AppConfig:
         self.APPLICATION_INSIGHTS_CONNECTION_STRING = self._resolve(
             "APPLICATIONINSIGHTS_CONNECTION_STRING", required=False, default="", is_secret=True
         )
+
+        # CORS
+        self.CORS_ALLOW_ORIGINS: List[str] = self._resolve(
+            "CORS_ALLOW_ORIGINS",
+            required=False,
+            default="http://localhost:3000,http://127.0.0.1:5173",
+        ).split(",")
 
 
     def _resolve(
