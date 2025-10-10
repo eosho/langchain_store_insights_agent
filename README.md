@@ -10,57 +10,65 @@ Store Insights AI is an intelligent chatbot that answers questions about store p
 
 ## 🏗️ Architecture
 
+### LangGraph Workflow (Detailed)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant AnalyzeIntent as analyze_intent
+    participant Router as route_question
+    participant GenAnswer as generate_answer
+    participant GenConv as generate_conversational
+    participant Grader as grade_hallucination
+    participant Decision as decide_after_grading
+    participant API as Store Insights API
+
+    User->>AnalyzeIntent: Question
+    AnalyzeIntent->>AnalyzeIntent: Extract store_id, date
+    AnalyzeIntent->>API: Fetch insights (if needed)
+    API-->>AnalyzeIntent: Return insights
+    AnalyzeIntent->>Router: Route decision
+
+    alt Insights API Route
+        Router->>GenAnswer: Generate with insights
+        GenAnswer->>Grader: Validate answer
+        Grader->>Decision: Check grounding
+
+        alt Answer is grounded
+            Decision-->>User: Return answer
+        else Not grounded (retry < 2)
+            Decision->>GenAnswer: Regenerate answer
+            GenAnswer->>Grader: Validate again
+            Grader->>Decision: Check grounding
+            Decision-->>User: Return answer
+        else Max retries reached
+            Decision-->>User: Return answer anyway
+        end
+
+    else General Chat Route
+        Router->>GenConv: Generate conversational
+        GenConv-->>User: Return response
+    end
 ```
-┌─────────────────┐
-│  Streamlit UI   │
-│   (Frontend)    │
-└────────┬────────┘
-         │ HTTP POST /v1/api/chat/ask
-         ▼
-┌─────────────────────────────────────────┐
-│           FastAPI Backend               │
-│  ┌───────────────────────────────────┐  │
-│  │     LangGraph Workflow            │  │
-│  │                                   │  │
-│  │  1. Analyze Intent                │  │
-│  │     └─> Extract store_id, date    │  │
-│  │                                   │  │
-│  │  2. Route Query                   │  │
-│  │     ├─> insights_api              │  │
-│  │     └─> general_chat              │  │
-│  │                                   │  │
-│  │  3. Generate Response             │  │
-│  │     └─> Context-aware answer      │  │
-│  └───────────────────────────────────┘  │
-│                                         │
-│  ┌──────────────┐  ┌──────────────┐   │
-│  │   Caching    │  │  Middleware  │   │
-│  │   (TTL 24h)  │  │  - Logging   │   │
-│  │              │  │  - Req ID    │   │
-│  └──────────────┘  └──────────────┘   │
-└────────┬────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│  Store Insights API │
-│  (External Service) │
-└─────────────────────┘
-```
 
-### Workflow Details
+### Node Descriptions
 
-1. **Intent Analysis**: Uses LLM with structured output to extract:
-   - Store ID(s)
-   - Date (with dynamic "today" calculation)
-   - Query intent classification
+| Node | Purpose | Input | Output |
+|------|---------|-------|--------|
+| **analyze_intent** | Extract store_id, date from question; retrieve insights from API | User question | Extracted parameters + insights |
+| **route_question** | Decide if query needs insights API or general chat | Question + extracted data | Route decision |
+| **generate_answer** | Generate RAG-based answer using insights | Question + insights | Generated answer |
+| **generate_conversational** | Handle greetings, help, and general questions | Question | Conversational response |
+| **grade_hallucination** | Verify answer is grounded in provided insights | Answer + insights | Grounding score |
+| **decide_after_grading** | Retry if not grounded (max 2 attempts) | Grounding score + iteration count | END or retry |
 
-2. **Query Routing**: Based on extracted entities:
-   - If store_id + date present → Route to Insights API
-   - Otherwise → Route to conversational handler
+### Key Features
 
-3. **Response Generation**:
-   - **Insights Route**: Fetches data from external API, generates answer with sources
-   - **Conversational Route**: Handles greetings, help, and general questions
+- ✅ **Automatic Entity Extraction**: Extracts store IDs and dates from natural language
+- ✅ **Intelligent Routing**: Determines if query needs data lookup or conversational response
+- ✅ **Quality Control**: Hallucination grading with automatic retry (max 2 attempts)
+- ✅ **Stateful Conversations**: LangGraph checkpointer enables multi-turn conversations
+- ✅ **Structured Outputs**: All LLM responses use Pydantic models for reliability
 
 ## 📦 Installation
 
@@ -177,42 +185,23 @@ POST /v1/api/chat/ask
 
 #### Get Insights (Direct)
 ```bash
-GET /v1/api/insights?store_id=100&date=2024-10-09&use_cache=true
+GET /v1/api/insights?store_id=100&date=2024-10-09
 ```
 
 **Response:**
 ```json
 {
-  "store_id": 100,
-  "date": "2024-10-09",
-  "insights": [
+  "items": [
     {
+      "id": "rec-123",
+      "store_id": "100",
       "type": "recommendation",
       "title": "Inventory Alert",
-      "text": "Consider restocking high-demand items..."
+      "text": "Consider restocking high-demand items...",
+      "score": 0.95
     }
-  ],
-  "cached": false
+  ]
 }
-```
-
-#### Cache Statistics
-```bash
-GET /v1/api/insights/cache/stats
-```
-
-**Response:**
-```json
-{
-  "cache_size": 42,
-  "max_size": 1000,
-  "ttl_seconds": 86400
-}
-```
-
-#### Clear Cache
-```bash
-POST /v1/api/insights/cache/clear
 ```
 
 ## 📄 License
