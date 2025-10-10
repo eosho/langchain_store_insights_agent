@@ -4,8 +4,9 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Body, Request
 from langchain_core.runnables import RunnableConfig
+from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 
-from schemas import ChatRequest, ChatResponse
+from schemas import ChatRequest, ChatResponse, TokenUsage
 from ..insights_client import FreshAgentAPIClient
 from graph import create_graph, initialize_graph_state
 
@@ -16,6 +17,10 @@ logging.getLogger("azure").setLevel(logging.WARNING)
 
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+# Initialize the callback handler
+callback_handler = OpenAICallbackHandler()
 
 
 def get_insights_client(request: Request) -> FreshAgentAPIClient:
@@ -46,14 +51,15 @@ async def ask(
     try:
         # Create and invoke graph - it handles intent analysis and insights retrieval
         config = RunnableConfig(
-            {"configurable": {"thread_id": 1, "insights_client": client}}
+            {"configurable": {"thread_id": 1, "insights_client": client}},
+            callbacks=[callback_handler],
         )
 
         graph = create_graph()
         initial_state = initialize_graph_state()
         initial_state["question"] = request.question
 
-        final_state = await graph.ainvoke(initial_state, config)
+        final_state = await graph.ainvoke(initial_state, config=config)
         answer = final_state.get("generation", "")
         insights_used = final_state.get("insights", [])
 
@@ -66,6 +72,11 @@ async def ask(
                 item.dict() if hasattr(item, "dict") else dict(item)
                 for item in insights_used
             ],
+            token_usage=TokenUsage(
+                prompt=callback_handler.prompt_tokens,
+                completion=callback_handler.completion_tokens,
+                total=callback_handler.total_tokens,
+            ),
             metadata={
                 "store_id": final_state.get("store_id"),
                 "route": final_state.get("route"),

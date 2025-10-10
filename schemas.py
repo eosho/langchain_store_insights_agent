@@ -29,6 +29,14 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
+class TokenUsage(BaseModel):
+    """Token usage statistics for LLM calls."""
+
+    prompt: int = Field(0, description="Total prompt tokens used")
+    completion: int = Field(0, description="Total completion tokens used")
+    total: int = Field(0, description="Total tokens used (prompt + completion)")
+
+
 # Request/Response Models
 class ChatRequest(BaseModel):
     """Request model for chat endpoints."""
@@ -45,4 +53,7 @@ class ChatResponse(BaseModel):
     )
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
+    )
+    token_usage: Optional[TokenUsage] = Field(
+        None, description="Token usage statistics for this request"
     )
