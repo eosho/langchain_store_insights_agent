@@ -9,12 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from datetime import date as Date
 
 from app.api.insights_client import FreshAgentAPIClient, InsightsAPIError
-from app.utils.cache import (
-    get_cached_insights,
-    set_cached_insights,
-    get_cache_stats,
-    clear_insights_cache,
-)
 from schemas import Insight, InsightListResponse
 
 router = APIRouter(prefix="/insights", tags=["insights"])
@@ -87,27 +81,13 @@ async def get_insights(
         description="Optional business date (YYYY-mm-dd).",
         examples=["2025-10-01"],
     ),
-    use_cache: bool = Query(
-        default=True,
-        description="Use cached data if available (24-hour TTL).",
-    ),
     client: FreshAgentAPIClient = Depends(get_insights_client),
 ):
     """Return a flat, LLM-friendly list of insights and recommendations.
 
-    Behavior:
-      • Checks cache first (24-hour TTL) unless use_cache=False
-      • If `data/stage.json` exists, load and filter it locally (dev/staging mode).
-      • Otherwise, call the external insights API via `FreshAgentAPIClient`.
-
-    The external/staged payload is a list of *summaries*. Each summary may contain
-    `insights[]` and `recommendations[]`. This route flattens both into `Insight`
-    items, carrying IDs for citation.
-
     Args:
         store_id: Store/site identifier to filter.
         date: Optional business date in YYYY-mm-dd.
-        use_cache: Whether to use cached data (default: True)
 
     Returns:
         InsightListResponse: Flat list of items with type = "insight" | "recommendation".
@@ -116,12 +96,10 @@ async def get_insights(
         HTTPException: On upstream failure or malformed staged data.
     """
     try:
-        # Check cache first
+        # Check first
         summaries = None
-        if use_cache:
-            summaries = get_cached_insights(store_id, date)
 
-        # If not in cache, fetch from source
+        # If not , fetch from source
         if summaries is None:
             # Prefer staged JSON if present; otherwise hit the upstream API.
             if _STAGE_FILE.exists():
@@ -130,9 +108,6 @@ async def get_insights(
                 )
             else:
                 summaries = await client.get_insights(store_id=store_id, date=date)
-
-            # Cache the results
-            set_cached_insights(store_id, date, summaries)
 
         items: List[Insight] = []
         for s in summaries:
@@ -179,23 +154,3 @@ async def get_insights(
         ) from ve
     except InsightsAPIError as exc:
         raise HTTPException(status_code=502, detail=f"Upstream error: {exc}") from exc
-
-
-@router.get("/cache/stats")
-async def cache_stats():
-    """Get cache statistics for monitoring.
-
-    Returns:
-        Cache size, capacity, and TTL information
-    """
-    return get_cache_stats()
-
-
-@router.post("/cache/clear")
-async def clear_cache():
-    """Manually clear the insights cache.
-
-    Useful for forcing a fresh data fetch.
-    """
-    clear_insights_cache()
-    return {"message": "Cache cleared successfully"}
