@@ -10,7 +10,14 @@ from datetime import date as Date, datetime
 from typing_extensions import TypedDict
 
 from schemas import Insight
-from models import Router, Generator, ConversationalGenerator, IntentAnalyzer
+from models import (
+    Router,
+    Generator,
+    ConversationalGenerator,
+    IntentAnalyzer,
+    HallucinationGrader,
+    HumanFeedbackRequest,
+)
 from app.llm.base import get_llm, PROVIDER_TYPE
 from app.config.app_config import settings
 from app.api.routes.insights import get_insights
@@ -37,6 +44,7 @@ class GraphState(TypedDict):
     route: str
     iteration_count: int
     insights_retrieved: bool
+    is_grounded: Optional[str]
 
 
 class GraphNodes:
@@ -50,14 +58,20 @@ class GraphNodes:
 
         # Create shared LLM instances
         llm = get_llm(cast(PROVIDER_TYPE, settings.LLM_PROVIDER), temperature=0)
+        grader_llm = get_llm(
+            cast(PROVIDER_TYPE, settings.LLM_PROVIDER), temperature=0.7
+        )
 
         # Initialize all model chains with shared LLM instances
         self.intent_analyzer = IntentAnalyzer.get_model(llm)
         self.question_router = Router.get_model(llm)
         self.rag_chain = Generator.get_model(llm)
         self.conversation_chain = ConversationalGenerator.get_model(llm)
+        self.hallucination_grader = HallucinationGrader.get_model(grader_llm)
 
-    async def analyze_intent(self, state: GraphState, config: RunnableConfig) -> GraphState:
+    async def analyze_intent(
+        self, state: GraphState, config: RunnableConfig
+    ) -> GraphState:
         """
         Analyze the question to extract store_id and date, then retrieve insights.
 
@@ -73,9 +87,11 @@ class GraphNodes:
         question = state.get("question")
         # Get insights_client from config instead of state (not serializable)
         insights_client = config.get("configurable", {}).get("insights_client")
-        
+
         if not insights_client:
-            logger.warning("insights_client not found in config! Initializing a new instance.")
+            logger.warning(
+                "insights_client not found in config! Initializing a new instance."
+            )
 
             insights_client = FreshAgentAPIClient(
                 base_url=settings.FRESH_AGENT_API_BASE_URL,
@@ -120,13 +136,11 @@ class GraphNodes:
                 # Continue with empty insights - generator will handle appropriately
 
         return {
+            **state,
             "question": question,
-            "generation": state.get("generation", ""),
             "insights": insights,
             "store_id": intent.store_id,
             "date": date_obj,
-            "route": state.get("route", ""),
-            "iteration_count": state.get("iteration_count", 0) + 1,
             "insights_retrieved": True,
         }
 
@@ -156,14 +170,10 @@ class GraphNodes:
         logger.debug(f"---GENERATION: {generation[:100]}...---")
 
         return {
-            "insights": insights,
-            "question": question,
+            **state,
             "generation": generation,
-            "store_id": state.get("store_id"),
-            "date": state.get("date"),
             "route": "insights_api",
             "iteration_count": state.get("iteration_count", 0) + 1,
-            "insights_retrieved": state.get("insights_retrieved", False),
         }
 
     async def generate_conversational(self, state: GraphState) -> GraphState:
@@ -186,15 +196,74 @@ class GraphNodes:
         logger.debug(f"---CONVERSATION: {generation[:100]}...---")
 
         return {
-            "insights": [],  # No insights for general chat
-            "question": question,
+            **state,
             "generation": generation,
-            "store_id": state.get("store_id"),
-            "date": state.get("date"),
             "route": "general_chat",
+            "insights": [],  # No insights for general chat
             "iteration_count": state.get("iteration_count", 0) + 1,
-            "insights_retrieved": state.get("insights_retrieved", False),
         }
+
+    async def grade_hallucination(self, state: GraphState) -> GraphState:
+        """
+        Grade whether the generated answer is grounded in the provided insights.
+
+        Args:
+            state (GraphState): Current state with generation and insights
+
+        Returns:
+            state (GraphState): Updated state with is_grounded field
+        """
+        logger.debug("---GRADE HALLUCINATION---")
+
+        generation = state.get("generation")
+        insights = state.get("insights", [])
+
+        # Grade the answer
+        grade_result = await self.hallucination_grader.ainvoke(
+            {"context": insights, "generation": generation}
+        )
+        grade = cast(HallucinationGrader.GradeHallucination, grade_result)
+
+        logger.info(f"Hallucination grade: {grade.is_grounded} - {grade.explanation}")
+
+        return {
+            **state,
+            "is_grounded": grade.is_grounded,
+            "iteration_count": state.get("iteration_count", 0) + 1,
+        }
+
+    def decide_after_grading(
+        self, state: GraphState
+    ) -> Literal["generate_answer", "END"]:
+        """
+        Decide whether to regenerate or end based on grading.
+
+        Args:
+            state (GraphState): Current state with is_grounded
+
+        Returns:
+            str: Next node - retry generation or end
+        """
+        logger.debug("---DECIDE AFTER GRADING---")
+
+        is_grounded = state.get("is_grounded")
+        iteration_count = state.get("iteration_count", 0)
+        max_retries = 2  # Maximum retry attempts
+
+        if is_grounded == "yes":
+            logger.info("Answer is grounded - proceeding to END")
+            return "END"
+
+        if iteration_count >= max_retries:
+            logger.warning(
+                f"Max retries ({max_retries}) reached - accepting answer despite hallucination"
+            )
+            return "END"
+
+        logger.info(
+            f"Answer not grounded - regenerating (attempt {iteration_count + 1}/{max_retries})"
+        )
+        return "generate_answer"
 
     # Edge/Routing Functions
 
@@ -238,17 +307,10 @@ class StoreInsightsGraph:
 
     @staticmethod
     def create(nodes: GraphNodes):
-        """
-        Create workflow: analyze_intent → route → generate.
-
-        The graph now:
-        1. Analyzes the question to extract store_id and date
-        2. Retrieves insights from the external API
-        3. Routes the question (general chat vs insights-based)
-        4. Generates appropriate response
+        """Create workflow: analyze_intent → route → generate.
 
         Args:
-            nodes: Nodes instance with intent analysis, routing and generation methods
+            nodes: Nodes instance with intent analysis, routing, generation, and grading methods
 
         Returns:
             Compiled LangGraph StateGraph
@@ -259,11 +321,10 @@ class StoreInsightsGraph:
         workflow.add_node("analyze_intent", nodes.analyze_intent)
         workflow.add_node("generate_answer", nodes.generate_answer)
         workflow.add_node("generate_conversational", nodes.generate_conversational)
+        workflow.add_node("grade_hallucination", nodes.grade_hallucination)
 
-        # Start with intent analysis
         workflow.set_entry_point("analyze_intent")
 
-        # After intent analysis, route based on question type
         workflow.add_conditional_edges(
             "analyze_intent",
             nodes.route_question,
@@ -272,13 +333,37 @@ class StoreInsightsGraph:
                 "insights_api": "generate_answer",
             },
         )
+        workflow.add_edge("generate_answer", "grade_hallucination")
 
-        # Simple linear flow - both routes lead to END
+        workflow.add_conditional_edges(
+            "grade_hallucination",
+            nodes.decide_after_grading,
+            {
+                "generate_answer": "generate_answer",  # Retry generation
+                "END": END,
+            },
+        )
+
         workflow.add_edge("generate_conversational", END)
-        workflow.add_edge("generate_answer", END)
 
         checkpointer = InMemorySaver()
         return workflow.compile(checkpointer=checkpointer)
+
+
+def initialize_graph_state():
+    """Initialize a new graph state with default values."""
+
+    return GraphState(
+        question="",
+        generation="",
+        insights=[],
+        store_id=None,
+        date=None,
+        route="",
+        iteration_count=0,
+        insights_retrieved=False,
+        is_grounded=None,
+    )
 
 
 def create_graph():
