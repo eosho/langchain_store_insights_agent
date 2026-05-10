@@ -27,19 +27,15 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             status_code = response.status_code
         except Exception:
-            duration_ms = max(int((time.perf_counter() - start_time) * 1000), 0)
-            logger.info(
-                json.dumps(
-                    {
-                        "method": method,
-                        "path": path,
-                        "status_code": 500,
-                        "duration_ms": duration_ms,
-                    }
-                )
-            )
+            self._log_request_timing(method, path, 500, start_time)
             raise
 
+        self._log_request_timing(method, path, status_code, start_time)
+        return response
+
+    def _log_request_timing(
+        self, method: str, path: str, status_code: int, start_time: float
+    ) -> None:
         duration_ms = max(int((time.perf_counter() - start_time) * 1000), 0)
         logger.info(
             json.dumps(
@@ -51,4 +47,3 @@ class RequestTimingMiddleware(BaseHTTPMiddleware):
                 }
             )
         )
-        return response
