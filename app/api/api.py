@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .insights_client import FreshAgentAPIClient
 from .routes import health, insights, chat
-from .middleware import LoggingMiddleware, RequestIDMiddleware
+from .middleware import RequestIDMiddleware
+from app.middleware.timing import RequestTimingMiddleware
 from graph import create_graph
 from app.config.app_config import settings
 
@@ -71,7 +72,7 @@ def create_app() -> FastAPI:
 
     # Add custom middleware
     app.add_middleware(RequestIDMiddleware)
-    app.add_middleware(LoggingMiddleware)
+    app.add_middleware(RequestTimingMiddleware)
 
     # API routers under a single prefix
     api = APIRouter(prefix=API_PREFIX)
