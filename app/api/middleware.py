@@ -9,8 +9,6 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from app.middleware.request_id import RequestIDMiddleware
-
 logger = logging.getLogger(__name__)
 
 
@@ -79,4 +77,3 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 f"✗ {method} {url} ERROR: {str(e)} ({duration:.3f}s)", exc_info=True
             )
             raise
-

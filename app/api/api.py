@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .insights_client import FreshAgentAPIClient
 from .routes import health, insights, chat
-from app.middleware import RequestIDMiddleware, RequestTimingMiddleware
+from ..middleware import RequestIDMiddleware, RequestTimingMiddleware
 from graph import create_graph
 from app.config.app_config import settings
 
