@@ -106,6 +106,51 @@ sequenceDiagram
    # Edit .env with your credentials and values
    ```
 
+## Development
+
+### Prerequisites
+- Python 3.12 (see `.python-version`)
+- `pip` (project does not include a `uv` lockfile/config)
+- No additional system packages are required
+
+### Install (fresh clone)
+```bash
+python -m pip install -r requirements.txt && python -m pip install "pydantic-settings>=2.10.1" "langchain-community==0.3.31"
+```
+
+### Run the API locally (dev mode)
+```bash
+uvicorn app.api.api:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Run the test suite
+```bash
+python -m unittest discover -s tests
+```
+
+### Environment variables
+
+Required to start the API locally:
+- `AZURE_OPENAI_ENDPOINT`: Azure OpenAI endpoint URL.
+- `AZURE_OPENAI_API_KEY`: Azure OpenAI API key used to initialize the Azure LLM client.
+- `AZURE_OPENAI_DEPLOYMENT`: Azure OpenAI deployment/model name.
+- `FRESH_AGENT_API_BASE_URL`: Base URL for the upstream Fresh Agent insights API.
+
+Optional:
+- `AZURE_OPENAI_API_VERSION`: Azure OpenAI API version (defaults to `2024-12-01-preview`).
+- `LLM_PROVIDER`: LLM provider selector (`azure` default, or `openai`).
+- `OPENAI_API_KEY`: API key used when `LLM_PROVIDER=openai`.
+- `OPENAI_MODEL_NAME`: Model name used when `LLM_PROVIDER=openai` (defaults to `gpt-4o`).
+- `FRESH_AGENT_API_KEY`: Bearer token for the Fresh Agent API.
+- `FRESH_AGENT_API_TIMEOUT_SECONDS`: Fresh Agent API timeout in seconds (defaults to `30`).
+- `STORE_INSIGHTS_API_URL`: Base Store Insights API URL (defaults to `http://localhost:8000/v1/api`).
+- `COSMOS_DB_ENDPOINT`: Cosmos DB endpoint (reserved for future integration).
+- `COSMOS_DB_KEY`: Cosmos DB key (reserved for future integration).
+- `COSMOS_DB_DATABASE`: Cosmos DB database name (reserved for future integration).
+- `COSMOS_DB_CONTAINER`: Cosmos DB container name (reserved for future integration).
+- `APPLICATIONINSIGHTS_CONNECTION_STRING`: Application Insights connection string for telemetry.
+- `CORS_ALLOW_ORIGINS`: Comma-separated CORS origins (defaults to `http://localhost:3000,http://127.0.0.1:5173`).
+
 ## 🚀 Usage
 
 ### Running the API
