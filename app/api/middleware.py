@@ -9,6 +9,8 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
+from app.middleware.request_id import RequestIDMiddleware
+
 logger = logging.getLogger(__name__)
 
 
@@ -78,32 +80,3 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             )
             raise
 
-
-class RequestIDMiddleware(BaseHTTPMiddleware):
-    """Middleware to add a unique request ID to each request for tracing."""
-
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """Add request ID to the request state.
-
-        Args:
-            request: The incoming HTTP request
-            call_next: The next middleware/handler in the chain
-
-        Returns:
-            The HTTP response with X-Request-ID header
-        """
-        import uuid
-
-        # Generate or use existing request ID
-        request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
-
-        # Store in request state
-        request.state.request_id = request_id
-
-        # Process request
-        response = await call_next(request)
-
-        # Add request ID to response headers
-        response.headers["X-Request-ID"] = request_id
-
-        return response
