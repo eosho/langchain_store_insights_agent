@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import unittest
 
 from fastapi import FastAPI
@@ -8,7 +6,7 @@ from fastapi.testclient import TestClient
 from app.api.routes import health
 
 
-class ReadyzEndpointTests(unittest.TestCase):
+class TestReadyzEndpoint(unittest.TestCase):
     def _client_with_checks(self, checks):
         app = FastAPI()
         app.include_router(health.router, prefix="/v1/api")
