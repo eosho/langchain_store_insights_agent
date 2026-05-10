@@ -143,6 +143,11 @@ The UI will open at http://localhost:8501
 GET /v1/api/health
 ```
 
+#### Readiness Check
+```bash
+GET /v1/api/readyz
+```
+
 **Response:**
 ```json
 {
