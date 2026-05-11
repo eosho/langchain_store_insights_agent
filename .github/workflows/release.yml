@@ -1,0 +1,207 @@
+name: Release
+
+on:
+  # Beta releases: PR merged to dev with release label
+  pull_request:
+    types: [closed]
+    branches: [dev]
+
+  # Stable releases: stable tag push to main
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+env:
+  GIT_CLIFF_VERSION: "2.12.0"
+
+jobs:
+  release:
+    # Only run if:
+    # - tag push on a stable tag (no pre-release suffix like -beta.1), OR
+    # - PR merged with a release-related label
+    if: |
+      (github.event_name == 'push' && !contains(github.ref_name, '-')) ||
+      (github.event.pull_request.merged == true &&
+       (
+         contains(github.event.pull_request.labels.*.name, 'release') ||
+         contains(github.event.pull_request.labels.*.name, 'release:patch') ||
+         contains(github.event.pull_request.labels.*.name, 'release:minor') ||
+         contains(github.event.pull_request.labels.*.name, 'release:major')
+       ))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Run quality checks
+        run: |
+          uv run ruff check tools
+          uv run basedpyright --level error tools/aig_spec_kit
+
+      - name: Install git-cliff
+        run: |
+          VERSION=${{ env.GIT_CLIFF_VERSION }}
+          TARBALL="git-cliff-${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+          cd /tmp
+          curl -sSfLO "https://github.com/orhun/git-cliff/releases/download/v${VERSION}/${TARBALL}"
+          curl -sSfLO "https://github.com/orhun/git-cliff/releases/download/v${VERSION}/${TARBALL}.sha512"
+          sha512sum -c "${TARBALL}.sha512"
+          tar xzf "${TARBALL}"
+          sudo mv "git-cliff-${VERSION}/git-cliff" /usr/local/bin/
+
+      - name: Determine release type
+        id: release-type
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # Tag push = stable release
+            echo "type=stable" >> $GITHUB_OUTPUT
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          else
+            # PR merged with release label = beta release
+            echo "type=beta" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Calculate next beta version
+        if: steps.release-type.outputs.type == 'beta'
+        id: beta-version
+        run: |
+          # Check for bump type in PR labels (release:patch, release:minor, release:major)
+          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          if echo "$LABELS" | grep -q "release:major"; then
+            BUMP="major"
+          elif echo "$LABELS" | grep -q "release:minor"; then
+            BUMP="minor"
+          elif echo "$LABELS" | grep -q "release:patch"; then
+            BUMP="patch"
+          else
+            BUMP=""
+          fi
+
+          # Get the base version (without prerelease suffix)
+          # --ignore-tags skips beta tags so git-cliff bumps from the latest stable tag
+          if [[ -n "$BUMP" ]]; then
+            echo "Bump from label: $BUMP"
+            BASE_VERSION=$(git-cliff --bump "$BUMP" --bumped-version --ignore-tags ".*-beta.*")
+          else
+            echo "Auto-detecting bump from commits"
+            BASE_VERSION=$(git-cliff --bumped-version --ignore-tags ".*-beta.*")
+          fi
+          BASE_VERSION=${BASE_VERSION#v}  # Remove v prefix if present
+          BASE_VERSION=${BASE_VERSION%%-beta.*}  # Strip any pre-release suffix
+
+          # Find existing beta tags for this base version and increment
+          LATEST_BETA=$(git tag -l "v${BASE_VERSION}-beta.*" --sort=-v:refname | head -n1)
+          if [[ -n "$LATEST_BETA" ]]; then
+            # Extract beta number and increment
+            BETA_NUM=${LATEST_BETA##*-beta.}
+            NEW_BETA=$((BETA_NUM + 1))
+          else
+            NEW_BETA=1
+          fi
+
+          NEW_VERSION="${BASE_VERSION}-beta.${NEW_BETA}"
+          echo "Next beta: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set final version
+        id: version
+        run: |
+          if [[ "${{ steps.release-type.outputs.type }}" == "stable" ]]; then
+            echo "version=${{ steps.release-type.outputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=${{ steps.release-type.outputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ steps.beta-version.outputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=${{ steps.beta-version.outputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          if [[ "${{ steps.release-type.outputs.type }}" == "stable" ]]; then
+            # For stable: generate full changelog with tag
+            git cliff --tag ${{ steps.version.outputs.tag }} -o CHANGELOG.md
+            # Extract only this release's notes (latest tag section)
+            git cliff --current --strip header > RELEASE_NOTES.md
+          else
+            # For beta: tag unreleased commits with new version, generate full changelog
+            git cliff --tag ${{ steps.version.outputs.tag }} -o CHANGELOG.md
+            # Extract unreleased section (will become this beta) for release notes
+            git cliff --unreleased --tag ${{ steps.version.outputs.tag }} --strip header > RELEASE_NOTES.md
+          fi
+
+          echo "Generated changelog for ${{ steps.version.outputs.tag }}"
+          cat RELEASE_NOTES.md
+
+      - name: Update version files
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Update workspace pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+
+          # Update package pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" tools/pyproject.toml
+
+          # Update __init__.py
+          sed -i "s/__version__ = \".*\"/__version__ = \"$VERSION\"/" tools/aig_spec_kit/__init__.py
+
+          # Update lock file (picks up new version from tools/pyproject.toml)
+          uv lock
+
+      - name: Create template ZIP
+        run: uv run poe release-zip
+
+      - name: Commit and tag (beta only)
+        if: steps.release-type.outputs.type == 'beta'
+        run: |
+          git add CHANGELOG.md pyproject.toml tools/pyproject.toml uv.lock tools/aig_spec_kit/__init__.py
+          git commit -m "chore(release): ${{ steps.version.outputs.version }} [skip ci]"
+          git tag ${{ steps.version.outputs.tag }}
+          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+          git push origin ${{ steps.version.outputs.tag }}
+
+      - name: Commit and tag (stable only)
+        if: steps.release-type.outputs.type == 'stable'
+        run: |
+          git add CHANGELOG.md pyproject.toml tools/pyproject.toml uv.lock tools/aig_spec_kit/__init__.py
+          if git diff --staged --quiet; then
+            echo "No file changes to commit for stable release ${{ steps.version.outputs.tag }}"
+          else
+            git commit -m "chore(release): ${{ steps.version.outputs.version }} [skip ci]"
+            # Push the version-bump commit to main so the branch history is clean
+            git push origin HEAD:main
+            # Move the tag to the new commit (annotated to preserve tag type)
+            git tag -fa ${{ steps.version.outputs.tag }} -m "Release ${{ steps.version.outputs.tag }}"
+            git push -f origin ${{ steps.version.outputs.tag }}
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ steps.version.outputs.tag }} \
+            --title "${{ steps.version.outputs.tag }}" \
+            --notes-file RELEASE_NOTES.md \
+            ${{ steps.release-type.outputs.prerelease == 'true' && '--prerelease' || '' }} \
+            aig-spec-kit.zip
