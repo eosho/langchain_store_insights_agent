@@ -150,6 +150,19 @@ GET /v1/api/health
 }
 ```
 
+#### Version
+```bash
+GET /v1/api/version
+```
+
+**Response:**
+```json
+{
+  "name": "langchain_store_insights_agent",
+  "version": "0.1.0"
+}
+```
+
 #### Chat - Ask Question
 ```bash
 POST /v1/api/chat/ask

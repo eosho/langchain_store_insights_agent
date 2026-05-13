@@ -7,7 +7,7 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 from .insights_client import FreshAgentAPIClient
-from .routes import health, insights, chat
+from .routes import health, insights, chat, version
 from .middleware import LoggingMiddleware, RequestIDMiddleware
 from graph import create_graph
 from app.config.app_config import settings
@@ -78,6 +78,7 @@ def create_app() -> FastAPI:
     api.include_router(health.router)
     api.include_router(insights.router)
     api.include_router(chat.router)
+    api.include_router(version.router)
     app.include_router(api)
 
     return app
