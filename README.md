@@ -143,10 +143,35 @@ The UI will open at http://localhost:8501
 GET /v1/api/health
 ```
 
+#### Readiness Check
+```bash
+GET /v1/api/readyz
+```
+
 **Response:**
 ```json
 {
-  "status": "healthy"
+  "status": "ready",
+  "checks": {
+    "fresh_agent_api": "ok"
+  }
+}
+```
+
+**Failure Response (503):**
+```json
+{
+  "status": "not_ready",
+  "checks": {
+    "fresh_agent_api": "fail: Fresh Agent API unreachable"
+  }
+}
+```
+
+#### Example Health Response
+```json
+{
+  "status": "ok"
 }
 ```
 

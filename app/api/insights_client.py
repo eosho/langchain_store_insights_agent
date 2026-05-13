@@ -30,6 +30,7 @@ RETRYABLE_TRANSPORT_EXC = (
     httpx.RemoteProtocolError,
     httpx.PoolTimeout,
 )
+READINESS_CHECK_TIMEOUT_SECONDS = 2.0
 
 
 class InsightsAPIError(Exception):
@@ -177,6 +178,17 @@ class FreshAgentAPIClient:
         Should be called during FastAPI lifespan shutdown to release resources.
         """
         await self._client.aclose()
+
+    async def readiness_check(self) -> None:
+        """Verify the upstream insights API is reachable and responding successfully.
+
+        This probes the same endpoint used by normal insights retrieval so readiness
+        reflects real dependency availability.
+        """
+        resp = await self._client.get(
+            "/api/v1/store-details", timeout=READINESS_CHECK_TIMEOUT_SECONDS
+        )
+        resp.raise_for_status()
 
     @_retryable("get_insights")
     async def get_insights(

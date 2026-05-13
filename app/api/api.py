@@ -7,6 +7,7 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 from .insights_client import FreshAgentAPIClient
+from .readiness import build_readiness_checks
 from .routes import health, insights, chat
 from .middleware import LoggingMiddleware, RequestIDMiddleware
 from graph import create_graph
@@ -31,6 +32,7 @@ async def lifespan(app: FastAPI):
         base_url=settings.FRESH_AGENT_API_BASE_URL,
         api_key=settings.FRESH_AGENT_API_KEY,
     )
+    app.state.readyz_checks = build_readiness_checks(app.state.insights_client)
     app.state.chat_graph = create_graph()
 
     # Simple in-memory chat session store
