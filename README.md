@@ -1,12 +1,29 @@
 # 🏪 Store Insights AI
 
-Store Insights AI is an intelligent chatbot that answers questions about store performance, inventory, and operations using natural language. It automatically:
+Store Insights AI is a LangGraph-powered assistant for natural-language questions about store performance, inventory, and operations. It extracts key entities (such as store IDs and dates), routes requests to either conversational handling or Store Insights API retrieval, and generates grounded responses with Azure OpenAI/OpenAI models. See the [Architecture](#-architecture) section for detailed workflow behavior.
 
-- **Extracts entities** (store IDs, dates) from user questions
-- **Routes queries** to the appropriate handler (API lookup or conversational)
-- **Retrieves relevant insights** from an external Store Insights API
-- **Generates contextual answers** using Azure OpenAI/OpenAI
-- **Caches responses** for 24 hours to optimize performance
+## ⚡ Quickstart
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.api.api:app --reload --host 0.0.0.0 --port 8000
+```
+
+In another terminal, you can run the UI locally:
+
+```bash
+cd ui
+streamlit run app.py
+```
+
+## 📁 Project structure
+
+- `app/` — Core backend application logic, API routes, and orchestration components.
+- `ui/` — Streamlit frontend for interacting with the assistant locally.
+- `data/` — Local data files used by the application.
 
 ## 🏗️ Architecture
 
